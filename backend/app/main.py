@@ -42,23 +42,24 @@ def health_check():
     return {"status": "ok", "message": "Team Task Manager API is running"}
 
 
-# Serve frontend static files
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
 
-frontend_path = os.path.join(BASE_DIR, "frontend")
+# Robust path detection
+BASE_DIR = Path(__file__).resolve().parent.parent
+frontend_path = BASE_DIR / "frontend"
+static_path = frontend_path / "static"
+templates_path = frontend_path / "templates"
+index_path = templates_path / "index.html"
 
-static_path = os.path.join(frontend_path, "static")
+print(f"--- PATH DEBUG ---")
+print(f"BASE_DIR: {BASE_DIR}")
+print(f"Frontend: {frontend_path}")
+print(f"Index: {index_path}")
+print(f"Index Exists: {index_path.exists()}")
+print(f"------------------")
 
-print("BASE_DIR:", BASE_DIR)
-print("Frontend path:", frontend_path)
-
-index_test = os.path.join(frontend_path, "templates", "index.html")
-
-print("Index path:", index_test)
-print("Index exists:", os.path.exists(index_test))
-
-if os.path.exists(static_path):
-    app.mount("/static", StaticFiles(directory=static_path), name="static")
+if static_path.exists():
+    app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 
 @app.get("/{full_path:path}")
@@ -72,8 +73,7 @@ async def serve_frontend(full_path: str):
         return {"detail": "Static file not found"}
 
     # Serve index.html for all other GET requests (SPA support)
-    index_path = os.path.join(frontend_path, "templates", "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
+    if index_path.exists():
+        return FileResponse(str(index_path))
 
-    return {"detail": "Frontend not found"}
+    return {"detail": "Frontend not found", "debug_path": str(index_path)}
