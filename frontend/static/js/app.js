@@ -26,42 +26,54 @@ const api = {
     if (res.status === 204) return null;
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Request failed');
+    if (!res.ok) {
+      let errorMessage = 'Request failed';
+
+      if (typeof data.detail === 'string') {
+        errorMessage = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        errorMessage = data.detail.map(err => err.msg).join(', ');
+      } else if (data.message) {
+        errorMessage = data.message;
+      }
+
+      throw new Error(errorMessage);
+    }
     return data;
   },
 
-  get:    (path)        => api.request('GET',    path),
-  post:   (path, body)  => api.request('POST',   path, body),
-  put:    (path, body)  => api.request('PUT',    path, body),
-  delete: (path)        => api.request('DELETE', path),
+  get: (path) => api.request('GET', path),
+  post: (path, body) => api.request('POST', path, body),
+  put: (path, body) => api.request('PUT', path, body),
+  delete: (path) => api.request('DELETE', path),
 
   // Auth
   signup: (data) => api.post('/auth/register', data),
   verifyOtp: (data) => api.post('/auth/verify-otp', data),
   resendOtp: (data) => api.post('/auth/resend-otp', data),
-  login:  (data) => api.post('/auth/login',  data),
-  me:     ()     => api.get('/auth/me'),
+  login: (data) => api.post('/auth/login', data),
+  me: () => api.get('/auth/me'),
 
   // Projects
-  getProjects:   ()          => api.get('/projects'),
-  getProject:    (id)        => api.get(`/projects/${id}`),
-  createProject: (data)      => api.post('/projects', data),
-  updateProject: (id, data)  => api.put(`/projects/${id}`, data),
-  deleteProject: (id)        => api.delete(`/projects/${id}`),
-  addMember:     (pid, data) => api.post(`/projects/${pid}/members`, data),
-  removeMember:  (pid, uid)  => api.delete(`/projects/${pid}/members/${uid}`),
+  getProjects: () => api.get('/projects'),
+  getProject: (id) => api.get(`/projects/${id}`),
+  createProject: (data) => api.post('/projects', data),
+  updateProject: (id, data) => api.put(`/projects/${id}`, data),
+  deleteProject: (id) => api.delete(`/projects/${id}`),
+  addMember: (pid, data) => api.post(`/projects/${pid}/members`, data),
+  removeMember: (pid, uid) => api.delete(`/projects/${pid}/members/${uid}`),
 
   // Tasks
-  getTasks:    (pid, params = {}) => {
+  getTasks: (pid, params = {}) => {
     const q = new URLSearchParams(params).toString();
     return api.get(`/projects/${pid}/tasks${q ? '?' + q : ''}`);
   },
-  createTask:  (pid, data)  => api.post(`/projects/${pid}/tasks`, data),
-  updateTask:  (pid, tid, data) => api.put(`/projects/${pid}/tasks/${tid}`, data),
-  deleteTask:  (pid, tid)   => api.delete(`/projects/${pid}/tasks/${tid}`),
+  createTask: (pid, data) => api.post(`/projects/${pid}/tasks`, data),
+  updateTask: (pid, tid, data) => api.put(`/projects/${pid}/tasks/${tid}`, data),
+  deleteTask: (pid, tid) => api.delete(`/projects/${pid}/tasks/${tid}`),
 
   // Users
-  getUsers:  () => api.get('/users'),
+  getUsers: () => api.get('/users'),
   getDashboardStats: () => api.get('/users/dashboard/stats'),
 };
 
@@ -166,91 +178,134 @@ function openModal(title, bodyHTML, onSubmit, submitLabel = 'Save') {
 
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
-function renderAuth() {
+// ── LANDING PAGE ─────────────────────────────────────────────────────────────
+function renderLandingPage() {
   document.body.innerHTML = `
-    <div class="auth-page">
-      <div class="auth-card">
-        <div class="auth-logo">
-          <div class="logo-icon">✦</div>
-          <h1>TaskFlow</h1>
-          <p>Team project & task management</p>
+    <div class="landing-page">
+      <nav class="landing-nav">
+        <div class="landing-logo">
+          <span style="font-size:24px">✦</span> TeamTask
         </div>
-        <div class="auth-tabs">
-          <button class="auth-tab active" data-tab="login">Sign In</button>
-          <button class="auth-tab" data-tab="signup">Create Account</button>
+        <div class="landing-menu">
+          <a href="#">Home</a>
+          <a href="#">Projects</a>
+          <a href="#">Communications</a>
+          <a href="#">Pricing</a>
+          <a href="#">Blog</a>
         </div>
-        <div id="auth-alert"></div>
-        <div id="auth-form-container"></div>
-      </div>
+        <div class="landing-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-show-login">Log in</button>
+          <button class="btn btn-primary btn-sm" style="width:auto" id="btn-show-signup">Sign Up</button>
+        </div>
+      </nav>
+
+      <header class="hero">
+        <div class="hero-content">
+          <h1>TeamTask: Your Team's Hub for Streamlined Workflows.</h1>
+          <p>Effortless Collaboration, Higher Productivity. Manage your tasks and projects with a beautiful, unified interface.</p>
+          <div class="hero-btns">
+            <button class="btn btn-primary" style="width:auto;padding:14px 28px" id="hero-get-started">GET STARTED FREE</button>
+            <button class="btn btn-ghost" style="width:auto;padding:14px 28px">Watch Demo</button>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img src="https://img.freepik.com/free-vector/flat-hand-drawn-project-management-concept_23-2148834525.jpg" alt="Team Work">
+        </div>
+      </header>
+
+      <section class="features">
+        <div class="feature-card">
+          <div class="feature-icon">📁</div>
+          <h3>Visual Task Management</h3>
+          <p>Manage tasks with flexible Kanban boards. (Image of generic empty Kanban boards)</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Real-time Chat</h3>
+          <p>Collaborate with your team instantly with built-in messaging features.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Detailed Reporting</h3>
+          <p>Get insights into your team's performance with advanced analytics.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">☁️</div>
+          <h3>File Sharing</h3>
+          <p>Store and share important documents directly within your projects.</p>
+        </div>
+      </section>
     </div>`;
 
-  renderLoginForm();
-
-  $$('.auth-tab').forEach(tab => {
-    tab.onclick = () => {
-      $$('.auth-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      tab.dataset.tab === 'login' ? renderLoginForm() : renderSignupForm();
-    };
-  });
+  $('#btn-show-login').onclick = showLoginModal;
+  $('#btn-show-signup').onclick = showSignupModal;
+  $('#hero-get-started').onclick = showSignupModal;
 }
 
-function renderLoginForm() {
-  $('#auth-form-container').innerHTML = `
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="btn btn-primary" id="auth-submit">Sign In →</button>`;
-
-  $('#auth-submit').onclick = handleLogin;
-  $('#password').onkeydown = (e) => { if (e.key === 'Enter') handleLogin(); };
-}
-
-function renderSignupForm() {
-  $('#auth-form-container').innerHTML = `
-    <div id="signup-step-1">
+function showLoginModal() {
+  openModal('Log In', `
+    <form id="login-form">
       <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="name" placeholder="Jane Smith">
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="email" placeholder="you@example.com">
+        <label>Email address</label>
+        <input type="email" id="login-email" required placeholder="you@example.com">
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="password" placeholder="Min. 6 characters">
+        <input type="password" id="login-password" required placeholder="••••••••">
+      </div>
+    </form>
+  `, async (modal, close) => {
+    const email = modal.querySelector('#login-email').value;
+    const password = modal.querySelector('#login-password').value;
+    const data = await api.login({ email, password });
+    if (data) {
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      state.user = data.user;
+      close();
+      renderApp();
+    }
+  }, 'Sign In');
+}
+
+function showSignupModal() {
+  openModal('Create Account', `
+    <form id="signup-form">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" required placeholder="John Doe">
+      </div>
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" id="signup-email" required placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" required placeholder="Min. 6 characters">
       </div>
       <div class="form-group">
         <label>Role</label>
-        <select id="role">
-          <option value="member">Member</option>
-          <option value="admin">Admin</option>
+        <select id="signup-role">
+          <option value="member">Team Member</option>
+          <option value="admin">Administrator</option>
         </select>
       </div>
-      <button class="btn btn-primary" id="auth-submit">Create Account →</button>
-    </div>
-    <div id="signup-step-2" style="display:none">
-      <div class="alert alert-success" style="margin-bottom:16px">
-        OTP sent to your email! Please enter it below.
-      </div>
-      <div class="form-group">
-        <label>Enter 6-digit OTP</label>
-        <input type="text" id="otp-code" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-size:20px;text-align:center">
-      </div>
-      <button class="btn btn-primary" id="verify-submit">Verify & Login →</button>
-      <div style="margin-top:16px;text-align:center;font-size:13px">
-        <button id="resend-otp-btn" class="btn btn-ghost btn-sm">Resend OTP</button>
-        <span id="resend-timer" style="color:var(--text-muted);display:none"></span>
-      </div>
-    </div>`;
-
-  $('#auth-submit').onclick = handleSignup;
+    </form>
+  `, async (modal, close) => {
+    const data = await api.signup({
+      name: modal.querySelector('#signup-name').value,
+      email: modal.querySelector('#signup-email').value,
+      password: modal.querySelector('#signup-password').value,
+      role: modal.querySelector('#signup-role').value,
+    });
+    if (data) {
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      state.user = data.user;
+      close();
+      renderApp();
+    }
+  }, 'Create Account');
 }
 
 async function handleLogin() {
@@ -277,37 +332,13 @@ async function handleSignup() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Creating account…';
   try {
-    const email = $('#email').value;
     const data = await api.signup({
       name: $('#name').value,
-      email: email,
+      email: $('#email').value,
       password: $('#password').value,
       role: $('#role').value,
     });
-    
-    // Switch to step 2 (OTP verification)
-    $('#signup-step-1').style.display = 'none';
-    $('#signup-step-2').style.display = 'block';
-    
-    $('#verify-submit').onclick = () => handleVerifyOtp(email);
-    $('#resend-otp-btn').onclick = () => handleResendOtp(email);
-    startResendTimer();
-  } catch (e) {
-    showAlert(e.message, 'error', $('#auth-alert'));
-    btn.disabled = false;
-    btn.textContent = 'Create Account →';
-  }
-}
 
-async function handleVerifyOtp(email) {
-  const btn = $('#verify-submit');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Verifying…';
-  try {
-    const data = await api.verifyOtp({
-      email: email,
-      otp_code: $('#otp-code').value,
-    });
     if (data) {
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -317,98 +348,69 @@ async function handleVerifyOtp(email) {
   } catch (e) {
     showAlert(e.message, 'error', $('#auth-alert'));
     btn.disabled = false;
-    btn.textContent = 'Verify & Login →';
+    btn.textContent = 'Create Account →';
   }
 }
-
-let resendInterval;
-function startResendTimer() {
-  let timeLeft = 30;
-  const btn = $('#resend-otp-btn');
-  const timer = $('#resend-timer');
-  
-  btn.style.display = 'none';
-  timer.style.display = 'inline-block';
-  timer.textContent = `Wait ${timeLeft}s to resend`;
-  
-  clearInterval(resendInterval);
-  resendInterval = setInterval(() => {
-    timeLeft--;
-    timer.textContent = `Wait ${timeLeft}s to resend`;
-    if (timeLeft <= 0) {
-      clearInterval(resendInterval);
-      btn.style.display = 'inline-block';
-      timer.style.display = 'none';
-    }
-  }, 1000);
-}
-
-async function handleResendOtp(email) {
-  const btn = $('#resend-otp-btn');
-  btn.disabled = true;
-  btn.textContent = 'Resending...';
-  try {
-    await api.resendOtp({ email: email });
-    showAlert('A new OTP has been sent!', 'success', $('#auth-alert'));
-    startResendTimer();
-  } catch (e) {
-    showAlert(e.message, 'error', $('#auth-alert'));
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Resend OTP';
-  }
-}
-
 
 // ── APP SHELL ─────────────────────────────────────────────────────────────────
 function renderApp() {
   document.body.innerHTML = `
     <div class="app">
-      <aside class="sidebar" id="sidebar">
+      <aside class="sidebar">
         <div class="sidebar-logo">
-          <div class="logo-mark">✦</div>
-          <span>TaskFlow</span>
+          <span style="font-size:28px">✦</span> TeamTask
+        </div>
+        <div class="sidebar-profile">
+          <div class="user-avatar" style="width:40px; height:40px; border-radius:10px; font-size:14px">${avatar(state.user?.name)}</div>
+          <div class="user-info">
+            <div class="user-name" style="font-size:14px">${state.user?.name}</div>
+            <div class="user-role" style="font-size:11px">${state.user?.role}</div>
+          </div>
         </div>
         <nav class="sidebar-nav">
-          <div class="nav-section-label">Workspace</div>
-          <button class="nav-item active" data-page="dashboard">
-            <span class="nav-icon">⬛</span> Dashboard
-          </button>
-          <button class="nav-item" data-page="projects">
-            <span class="nav-icon">📁</span> Projects
-          </button>
-          <button class="nav-item" data-page="my-tasks">
-            <span class="nav-icon">✅</span> My Tasks
-          </button>
+          <a href="#" class="nav-item active" data-page="dashboard">🏠 Dashboard</a>
+          <a href="#" class="nav-item" data-page="teams">👥 Teams</a>
+          <a href="#" class="nav-item" data-page="employees">👤 Employees</a>
+          <a href="#" class="nav-item" data-page="projects">📁 Projects</a>
+          <a href="#" class="nav-item" data-page="my-tasks">✅ Tasks</a>
+          <a href="#" class="nav-item" data-page="reports">📊 Reports</a>
+          <a href="#" class="nav-item" data-page="support">🎧 Support</a>
+          
           ${state.user?.role === 'admin' ? `
-          <div class="nav-section-label" style="margin-top:8px">Admin</div>
-          <button class="nav-item" data-page="users">
-            <span class="nav-icon">👥</span> All Users
-          </button>` : ''}
+          <div class="nav-section-label">Admin</div>
+          <a href="#" class="nav-item" data-page="users">👮 All Users</a>` : ''}
         </nav>
-        <div class="sidebar-user">
-          <div class="user-avatar">${avatar(state.user?.name)}</div>
-          <div class="user-info">
-            <div class="user-name">${state.user?.name}</div>
-            <div class="user-role">${state.user?.role}</div>
-          </div>
-          <button class="logout-btn" id="logout-btn" title="Sign out">⎋</button>
+        <div class="sidebar-footer">
+          <a href="#" class="nav-item" data-page="settings" style="margin-bottom:8px">⚙️ Settings</a>
+          <button class="btn btn-ghost" style="width:100%; justify-content:flex-start" id="logout-btn">⎋ Sign Out</button>
         </div>
       </aside>
       <main class="main">
+        <div class="topbar">
+          <div class="topbar-search">
+            <input type="text" placeholder="Search tasks, projects, etc.">
+          </div>
+          <div class="topbar-actions">
+            <div style="font-size: 13px; font-weight:600">${state.user?.name}</div>
+            <div class="user-avatar" style="width:34px;height:34px">${avatar(state.user?.name)}</div>
+          </div>
+        </div>
         <div id="alert-container"></div>
         <div id="page-content"></div>
       </main>
     </div>`;
 
-  $$('[data-page]').forEach(btn => {
-    btn.onclick = () => navigateTo(btn.dataset.page);
+  $$('.nav-item').forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      navigateTo(btn.dataset.page);
+    };
   });
 
   $('#logout-btn').onclick = () => {
     localStorage.clear();
     state.user = null;
-    renderAuth();
+    renderLandingPage();
   };
 
   navigateTo('dashboard');
@@ -427,11 +429,11 @@ async function navigateTo(page, params = {}) {
   content.innerHTML = '<div class="page-loading"><div class="spinner"></div><p>Loading…</p></div>';
 
   try {
-    if (page === 'dashboard')        await renderDashboard();
-    else if (page === 'projects')    await renderProjects();
-    else if (page === 'project')     await renderProject(params.id);
-    else if (page === 'my-tasks')    await renderMyTasks();
-    else if (page === 'users')       await renderUsers();
+    if (page === 'dashboard') await renderDashboard();
+    else if (page === 'projects') await renderProjects();
+    else if (page === 'project') await renderProject(params.id);
+    else if (page === 'my-tasks') await renderMyTasks();
+    else if (page === 'users') await renderUsers();
   } catch (e) {
     content.innerHTML = `<div class="content"><div class="alert alert-error">Error: ${e.message}</div></div>`;
   }
@@ -439,81 +441,164 @@ async function navigateTo(page, params = {}) {
 
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
 async function renderDashboard() {
   const stats = await api.getDashboardStats();
   const projects = await api.getProjects();
   state.projects = projects || [];
 
   $('#page-content').innerHTML = `
-    <div class="topbar">
-      <div>
-        <div class="topbar-title">Dashboard</div>
-        <div style="font-size:12px;color:var(--text-muted)">Welcome back, ${state.user?.name} 👋</div>
+    <div style="padding: 32px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px">
+        <div>
+          <h1 style="font-size:24px; font-weight:800">My Tasks Overview | ${state.user?.name}</h1>
+          <div style="font-size:13px; color:var(--text-secondary)">Dashboard</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px; font-weight:700">🕒 ${new Date().toLocaleString()}</div>
+        </div>
       </div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm" id="new-project-btn">+ New Project</button>
-      </div>
-    </div>
-    <div class="content">
+
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon">📁</div>
-          <div class="stat-label">Projects</div>
+          <div class="stat-label">My Projects</div>
           <div class="stat-value">${stats?.total_projects ?? 0}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📋</div>
-          <div class="stat-label">Total Tasks</div>
+          <div class="stat-label">My Tasks</div>
           <div class="stat-value">${stats?.total_tasks ?? 0}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px">${stats?.tasks_in_progress ?? 0} pending · <span style="color:var(--danger)">${stats?.overdue_tasks ?? 0} overdue</span></div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">⚡</div>
-          <div class="stat-label">In Progress</div>
-          <div class="stat-value">${stats?.tasks_in_progress ?? 0}</div>
+          <div class="stat-label">My Upcoming Deadlines</div>
+          <div class="stat-value">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">✅</div>
-          <div class="stat-label">Completed</div>
-          <div class="stat-value">${stats?.tasks_done ?? 0}</div>
+          <div class="stat-label">My Performance Rate</div>
+          <div class="stat-value">94%</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">🔴</div>
-          <div class="stat-label">Overdue</div>
-          <div class="stat-value" style="color:var(--danger)">${stats?.overdue_tasks ?? 0}</div>
-        </div>
-        ${stats?.total_users != null ? `
-        <div class="stat-card">
-          <div class="stat-icon">👥</div>
-          <div class="stat-label">Users</div>
-          <div class="stat-value">${stats.total_users}</div>
-        </div>` : ''}
       </div>
 
-      <div class="section-card">
-        <div class="section-card-header">
-          Recent Projects
-          <button class="btn btn-ghost btn-sm" onclick="navigateTo('projects')">View All →</button>
+      <div class="dashboard-grid">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+            <h2 style="font-size:16px; font-weight:800">MY TASKS KANBAN BOARD</h2>
+            <div class="tasks-filters">
+              <button class="filter-chip active">All</button>
+              <button class="filter-chip">Filter</button>
+            </div>
+          </div>
+          <div id="kanban-container"></div>
         </div>
-        <div class="section-card-body">
-          ${state.projects.length === 0
-            ? '<div class="empty-state"><div class="empty-icon">📁</div><p>No projects yet. Create your first one!</p></div>'
-            : `<div class="projects-grid">${state.projects.slice(0, 6).map(projectCard).join('')}</div>`
-          }
+        
+        <div>
+          <div class="section-card">
+            <div class="section-card-header">Recent Activity</div>
+            <div class="section-card-body">
+              <div class="activity-list">
+                <div class="activity-item">
+                  <div class="activity-avatar" style="background: #8b5cf6">SL</div>
+                  <div class="activity-content">
+                    <div class="activity-msg"><b>Sarah L.</b> completed <b>Login Mockups</b></div>
+                    <div class="activity-time">24 mins ago</div>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-avatar" style="background: #3b82f6">MB</div>
+                  <div class="activity-content">
+                    <div class="activity-msg"><b>Michael B.</b> moved <b>API Integration</b> to In Progress</div>
+                    <div class="activity-time">1 hour ago</div>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-avatar" style="background: #10b981">JD</div>
+                  <div class="activity-content">
+                    <div class="activity-msg"><b>John Doe</b> added a comment to <b>Database Setup</b></div>
+                    <div class="activity-time">3 hours ago</div>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-avatar" style="background: #f59e0b">AK</div>
+                  <div class="activity-content">
+                    <div class="activity-msg"><b>Anna K.</b> created new project <b>Website Redesign</b></div>
+                    <div class="activity-time">Yesterday</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>`;
 
-  $('#new-project-btn')?.addEventListener('click', openCreateProjectModal);
-  $$('.project-card').forEach(card => {
-    card.addEventListener('click', () => navigateTo('project', { id: card.dataset.id }));
+  renderDashboardKanban();
+}
+
+async function renderDashboardKanban() {
+  // Aggregate tasks from all projects for the current user
+  let allTasks = [];
+  for (const p of state.projects) {
+    try {
+      const tasks = await api.getTasks(p.id, { assignee_id: state.user?.id });
+      if (tasks) allTasks = allTasks.concat(tasks);
+    } catch (_) { }
+  }
+
+  const cols = { todo: [], in_progress: [], under_review: [], done: [] };
+  allTasks.forEach(t => { 
+    const s = t.status === 'done' ? 'done' : (t.status === 'in_progress' ? 'in_progress' : 'todo');
+    if (cols[s]) cols[s].push(t); 
   });
+
+  const labels = { todo: 'To Do', in_progress: 'In Progress', under_review: 'Under Review', done: 'Completed' };
+  
+  $('#kanban-container').innerHTML = `
+    <div class="kanban-board-v2">
+      ${Object.entries(cols).map(([status, items]) => `
+        <div class="kanban-col-v2">
+          <div class="kanban-col-title">
+            ${labels[status]}
+            <span class="count-pill">${items.length}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:16px">
+            ${items.length === 0 ? '<div class="empty-state" style="font-size:11px; padding:20px">No tasks</div>' :
+              items.map(t => {
+                const progress = t.status === 'done' ? 100 : (t.status === 'in_progress' ? 50 : 0);
+                return `
+                <div class="kanban-card">
+                  <div class="card-tags">
+                    <span class="card-tag tag-${t.priority}">${t.priority}</span>
+                  </div>
+                  <div class="kanban-card-title">${t.title}</div>
+                  
+                  <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px">Progress</div>
+                  <div class="card-progress">
+                    <div class="card-progress-bar" style="width: ${progress}%"></div>
+                  </div>
+
+                  <div class="kanban-card-meta">
+                    <div style="display:flex; align-items:center; gap:8px">
+                      <div class="user-avatar" style="width:24px; height:24px; font-size:10px; border-radius:6px">${avatar(state.user?.name)}</div>
+                      <span style="font-size:12px; font-weight:700; color:var(--text-primary)">${state.user?.name}</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:4px">
+                      <span>📅</span>
+                      <span>${formatDate(t.due_date)}</span>
+                    </div>
+                  </div>
+                </div>`;
+              }).join('')
+            }
+          </div>
+        </div>`).join('')}
+    </div>`;
 }
 
 
 // ── PROJECTS ──────────────────────────────────────────────────────────────────
 function projectCard(p) {
   return `
-    <div class="project-card" data-id="${p.id}">
+      <div class="project-card" data-id="${p.id}">
       <div class="project-card-header">
         <div class="project-name">${p.name}</div>
         <span class="badge badge-member">${p.task_count ?? 0} tasks</span>
@@ -534,13 +619,15 @@ async function renderProjects() {
   state.projects = projects || [];
 
   $('#page-content').innerHTML = `
-    <div class="topbar">
-      <div class="topbar-title">Projects</div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm" id="new-project-btn">+ New Project</button>
+    <div style="padding: 32px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px">
+        <div>
+          <h1 style="font-size:24px; font-weight:800">Projects</h1>
+          <div style="font-size:13px; color:var(--text-secondary)">Manage your team's workspaces</div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:auto" id="new-project-btn">+ New Project</button>
       </div>
-    </div>
-    <div class="content">
+
       ${state.projects.length === 0
         ? '<div class="empty-state"><div class="empty-icon">📁</div><p>No projects yet.</p><button class="btn btn-primary btn-sm" id="create-first">Create Your First Project</button></div>'
         : `<div class="projects-grid">${state.projects.map(projectCard).join('')}</div>`
@@ -556,7 +643,7 @@ async function renderProjects() {
 
 function openCreateProjectModal() {
   openModal('Create New Project', `
-    <div class="form-group">
+      <div class="form-group">
       <label>Project Name *</label>
       <input type="text" id="proj-name" placeholder="e.g. Website Redesign">
     </div>
@@ -587,25 +674,24 @@ async function renderProject(projectId) {
   const isOwnerOrAdmin = state.user?.role === 'admin' || project.owner_id === state.user?.id;
 
   $('#page-content').innerHTML = `
-    <div class="topbar">
-      <div>
-        <div class="breadcrumb">
-          <a href="#" onclick="navigateTo('projects');return false">Projects</a>
-          <span>›</span>
-          <span>${project.name}</span>
+    <div style="padding: 32px">
+      <div class="breadcrumb">
+        <a href="#" onclick="navigateTo('projects');return false">Projects</a>
+        <span>›</span>
+        <span>${project.name}</span>
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px">
+        <h1 style="font-size:24px; font-weight:800">${project.name}</h1>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" id="new-task-btn">+ New Task</button>
+          ${isOwnerOrAdmin ? `<button class="btn btn-ghost btn-sm" id="edit-project-btn">Edit</button>` : ''}
+          ${isOwnerOrAdmin ? `<button class="btn btn-icon btn-sm" id="delete-project-btn" title="Delete project">🗑</button>` : ''}
         </div>
-        <div class="topbar-title">${project.name}</div>
       </div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm" id="new-task-btn">+ New Task</button>
-        ${isOwnerOrAdmin ? `<button class="btn btn-ghost btn-sm" id="edit-project-btn">Edit</button>` : ''}
-        ${isOwnerOrAdmin ? `<button class="btn btn-icon btn-sm" id="delete-project-btn" title="Delete project">🗑</button>` : ''}
-      </div>
-    </div>
-    <div class="content">
-      <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">
+
+      <div style="display:grid; grid-template-columns: 1fr 300px; gap:24px; align-items:start">
         <div>
-          <!-- Task filters -->
           <div class="tasks-header">
             <div class="tasks-filters">
               <button class="filter-chip active" data-status="">All</button>
@@ -620,11 +706,11 @@ async function renderProject(projectId) {
           </div>
           <div id="task-container"></div>
         </div>
-        <!-- Sidebar panel -->
+
         <div>
           <div class="section-card">
             <div class="section-card-header">About</div>
-            <div class="section-card-body" style="font-size:13px;color:var(--text-muted)">
+            <div class="section-card-body" style="font-size:13px; color:var(--text-secondary)">
               ${project.description || '<em>No description</em>'}
             </div>
           </div>
@@ -643,8 +729,6 @@ async function renderProject(projectId) {
                       <div class="member-email">${m.user?.email}</div>
                     </div>
                     <span class="badge badge-${m.role}">${m.role}</span>
-                    ${isOwnerOrAdmin && m.user_id !== project.owner_id ? `
-                      <button class="btn btn-icon btn-sm" onclick="removeMember(${projectId},${m.user_id})" title="Remove">✕</button>` : ''}
                   </div>`).join('')}
               </div>
             </div>
@@ -758,7 +842,8 @@ function renderKanban(tasks) {
 
   $('#task-container').innerHTML = `
     <div class="kanban-board">
-      ${Object.entries(cols).map(([status, items]) => `
+      ${
+        Object.entries(cols).map(([status, items]) => `
         <div class="kanban-col">
           <div class="kanban-col-header" style="color:${colors[status]}">
             ${labels[status]}
@@ -766,7 +851,7 @@ function renderKanban(tasks) {
           </div>
           <div class="kanban-tasks">
             ${items.length === 0 ? '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px">Empty</div>' :
-              items.map(t => `
+            items.map(t => `
                 <div class="kanban-task">
                   <div class="kanban-task-title">${t.title}</div>
                   <div class="kanban-task-meta">
@@ -778,9 +863,10 @@ function renderKanban(tasks) {
                     </div>
                   ` : ''}
                 </div>`).join('')
-            }
+          }
           </div>
-        </div>`).join('')}
+        </div>`).join('')
+  }
     </div>`;
 }
 
@@ -795,14 +881,16 @@ async function renderMyTasks() {
     try {
       const tasks = await api.getTasks(p.id, { assignee_id: state.user?.id });
       if (tasks) allTasks = allTasks.concat(tasks.map(t => ({ ...t, _projectName: p.name })));
-    } catch (_) {}
+    } catch (_) { }
   }
 
   $('#page-content').innerHTML = `
-    <div class="topbar">
-      <div class="topbar-title">My Tasks</div>
-    </div>
-    <div class="content">
+    <div style="padding: 32px">
+      <div style="margin-bottom:24px">
+        <h1 style="font-size:24px; font-weight:800">My Tasks</h1>
+        <div style="font-size:13px; color:var(--text-secondary)">All tasks assigned to you across all projects</div>
+      </div>
+
       ${allTasks.length === 0
         ? '<div class="empty-state"><div class="empty-icon">✅</div><p>No tasks assigned to you yet.</p></div>'
         : `<div class="task-list">${allTasks.map(t => `
@@ -816,14 +904,9 @@ async function renderMyTasks() {
                 <div class="task-meta">
                   ${statusBadge(t.status)}
                   ${priorityBadge(t.priority)}
-                  <span style="color:var(--accent)">📁 ${t._projectName}</span>
-                  ${t.due_date ? `<span class="${isOverdue(t.due_date, t.status) ? 'badge badge-overdue' : ''}">📅 ${formatDate(t.due_date)}</span>` : ''}
+                  <span style="color:var(--accent); font-weight:600">📁 ${t._projectName}</span>
+                  ${t.due_date ? `<span>📅 ${formatDate(t.due_date)}</span>` : ''}
                 </div>
-                ${t.assignees && t.assignees.length ? `
-                  <div style="margin-top:8px;display:flex;gap:4px">
-                    ${t.assignees.map(a => `<div class="user-avatar" style="width:24px;height:24px;font-size:10px" title="${a.name}">${avatar(a.name)}</div>`).join('')}
-                  </div>
-                ` : ''}
               </div>
             </div>`).join('')}</div>`
       }
@@ -845,10 +928,12 @@ async function renderUsers() {
   const users = await api.getUsers();
 
   $('#page-content').innerHTML = `
-    <div class="topbar">
-      <div class="topbar-title">All Users</div>
-    </div>
-    <div class="content">
+    <div style="padding: 32px">
+      <div style="margin-bottom:24px">
+        <h1 style="font-size:24px; font-weight:800">All Users</h1>
+        <div style="font-size:13px; color:var(--text-secondary)">Manage system users and their roles</div>
+      </div>
+
       <div class="section-card">
         <div class="section-card-body table-wrapper">
           <table>
@@ -867,10 +952,10 @@ async function renderUsers() {
                   <td>
                     <div style="display:flex;align-items:center;gap:8px">
                       <div class="user-avatar" style="width:30px;height:30px;font-size:11px">${avatar(u.name)}</div>
-                      <span>${u.name}</span>
+                      <span style="font-weight:600">${u.name}</span>
                     </div>
                   </td>
-                  <td style="color:var(--text-muted)">${u.email}</td>
+                  <td style="color:var(--text-secondary)">${u.email}</td>
                   <td><span class="badge badge-${u.role}">${u.role}</span></td>
                   <td><span class="badge ${u.is_active ? 'badge-done' : 'badge-high'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
                   <td style="color:var(--text-muted)">${formatDate(u.created_at)}</td>
@@ -1042,7 +1127,7 @@ function openEditProjectModal(project) {
 }
 
 async function confirmDeleteProject(project) {
-  if (!confirm(`Delete project "${project.name}"? This will delete all tasks too.`)) return;
+  if (!confirm(`Delete project "${project.name}" ? This will delete all tasks too.`)) return;
   await api.deleteProject(project.id);
   navigateTo('projects');
 }
@@ -1087,13 +1172,16 @@ async function removeMember(projectId, userId) {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 window.app = {
-  showAuth: renderAuth,
+  showAuth: renderLandingPage,
   navigateTo,
   removeMember,
 };
 
-if (state.user && localStorage.getItem('token')) {
-  renderApp();
-} else {
-  renderAuth();
-}
+// ── INITIALIZATION ────────────────────────────────────────────────────────────
+window.onload = () => {
+  if (state.user && localStorage.getItem('token')) {
+    renderApp();
+  } else {
+    renderLandingPage();
+  }
+};

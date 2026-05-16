@@ -9,18 +9,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
 
-    # SMTP / Email settings
-    SMTP_HOST: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    EMAILS_FROM: str = "noreply@taskflow.app"
-
-    # OTP settings
-    OTP_EXPIRE_MINUTES: int = 10
-
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache()

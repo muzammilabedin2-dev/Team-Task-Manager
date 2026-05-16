@@ -17,55 +17,6 @@ def list_users(
     """All authenticated users can list users (for assignment etc.)"""
     return db.query(User).filter(User.is_active == True).all()
 
-
-@router.get("/{user_id}", response_model=UserOut)
-def get_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-
-@router.put("/{user_id}", response_model=UserOut)
-def update_user(
-    user_id: int,
-    data: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    if current_user.role != "admin" and current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Cannot update other users")
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if data.name:
-        user.name = data.name
-    if data.email:
-        user.email = data.email
-    db.commit()
-    db.refresh(user)
-    return user
-
-
-@router.delete("/{user_id}", status_code=204)
-def deactivate_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
-):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
-    user.is_active = False
-    db.commit()
-
-
 @router.get("/dashboard/stats", tags=["Dashboard"])
 def get_dashboard_stats(
     db: Session = Depends(get_db),
@@ -116,3 +67,52 @@ def get_dashboard_stats(
         "overdue_tasks": overdue_tasks,
         "total_users": total_users,
     }
+
+@router.get("/{user_id}", response_model=UserOut)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.put("/{user_id}", response_model=UserOut)
+def update_user(
+    user_id: int,
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot update other users")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if data.name:
+        user.name = data.name
+    if data.email:
+        user.email = data.email
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.delete("/{user_id}", status_code=204)
+def deactivate_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
+    user.is_active = False
+    db.commit()
+
+

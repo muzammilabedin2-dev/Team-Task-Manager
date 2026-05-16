@@ -28,15 +28,6 @@ class RegisterRequest(UserCreate):
     pass
 
 
-class VerifyOtpRequest(BaseModel):
-    email: EmailStr
-    otp_code: str
-
-
-class ResendOtpRequest(BaseModel):
-    email: EmailStr
-
-
 class UserLogin(BaseModel):
     email: EmailStr
     password: str

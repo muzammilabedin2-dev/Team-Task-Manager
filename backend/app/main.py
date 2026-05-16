@@ -43,8 +43,8 @@ def health_check():
 
 
 # Serve frontend static files
-frontend_path = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
-static_path = os.path.join(frontend_path, "static")
+frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend"))
+static_path = os.path.abspath(os.path.join(frontend_path, "static"))
 
 if os.path.exists(static_path):
     app.mount("/static", StaticFiles(directory=static_path), name="static")
@@ -52,8 +52,17 @@ if os.path.exists(static_path):
 
 @app.get("/{full_path:path}")
 async def serve_frontend(full_path: str):
-    """Catch-all to serve the frontend SPA"""
+    # If the path looks like an API call but isn't handled by routers above, return 404
+    if full_path.startswith("api"):
+        return {"detail": "Not Found"}
+
+    # If the path looks like a static file call but isn't handled by the mount, return 404
+    if full_path.startswith("static"):
+        return {"detail": "Static file not found"}
+
+    # Serve index.html for all other GET requests (SPA support)
     index_path = os.path.join(frontend_path, "templates", "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return {"message": "Frontend not found"}
+
+    return {"detail": "Frontend not found"}
