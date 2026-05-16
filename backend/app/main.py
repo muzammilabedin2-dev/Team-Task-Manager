@@ -49,6 +49,14 @@ frontend_path = os.path.join(BASE_DIR, "frontend")
 
 static_path = os.path.join(frontend_path, "static")
 
+print("BASE_DIR:", BASE_DIR)
+print("Frontend path:", frontend_path)
+
+index_test = os.path.join(frontend_path, "templates", "index.html")
+
+print("Index path:", index_test)
+print("Index exists:", os.path.exists(index_test))
+
 if os.path.exists(static_path):
     app.mount("/static", StaticFiles(directory=static_path), name="static")
 
