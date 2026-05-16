@@ -43,8 +43,11 @@ def health_check():
 
 
 # Serve frontend static files
-frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
-static_path = os.path.abspath(os.path.join(frontend_path, "static"))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+frontend_path = os.path.join(BASE_DIR, "frontend")
+
+static_path = os.path.join(frontend_path, "static")
 
 if os.path.exists(static_path):
     app.mount("/static", StaticFiles(directory=static_path), name="static")
