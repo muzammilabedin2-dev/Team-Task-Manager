@@ -43,7 +43,7 @@ def health_check():
 
 
 # Serve frontend static files
-frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend"))
+frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
 static_path = os.path.abspath(os.path.join(frontend_path, "static"))
 
 if os.path.exists(static_path):
